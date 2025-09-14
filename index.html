@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Astronomy Data</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #0b0c10;
+        color: #c5c6c7;
+        margin: 0;
+        padding: 0;
+    }
+    header {
+        background: #1f2833;
+        padding: 1rem;
+        text-align: center;
+        font-size: 1.5rem;
+        color: #66fcf1;
+    }
+    main {
+        padding: 1rem;
+        max-width: 1200px;
+        margin: auto;
+    }
+    .city {
+        margin-bottom: 2rem;
+        background: #1f2833;
+        padding: 1rem;
+        border-radius: 8px;
+    }
+    .body-card {
+        margin: 0.5rem 0;
+        padding: 0.5rem;
+        background: #0b0c10;
+        border: 1px solid #45a29e;
+        border-radius: 5px;
+    }
+    h2, h3 {
+        color: #45a29e;
+    }
+    .label {
+        font-weight: bold;
+        color: #66fcf1;
+    }
+    .loading {
+        text-align: center;
+        padding: 2rem;
+    }
+    .error {
+        color: #ff6b6b;
+        padding: 1rem;
+        background: #2e1f1f;
+        border-radius: 5px;
+    }
+    .date-input {
+        margin: 1rem 0;
+        display: flex;
+        gap: 0.5rem;
+    }
+    input, button {
+        padding: 0.5rem;
+        background: #1f2833;
+        color: #c5c6c7;
+        border: 1px solid #45a29e;
+        border-radius: 4px;
+    }
+    button {
+        cursor: pointer;
+        background: #45a29e;
+        color: #0b0c10;
+        font-weight: bold;
+    }
+    button:hover {
+        background: #66fcf1;
+    }
+    .data-container {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    .data-column {
+        background: #1a1f29;
+        padding: 0.8rem;
+        border-radius: 5px;
+    }
+    .data-section {
+        margin-bottom: 1rem;
+    }
+    .data-section h4 {
+        color: #66fcf1;
+        margin-bottom: 0.5rem;
+        border-bottom: 1px solid #45a29e;
+        padding-bottom: 0.3rem;
+    }
+</style>
+</head>
+<body>
+<header>Astronomy Data</header>
+<main id="content">
+    <div class="loading">Loading data...</div>
+    <div class="date-input">
+        <input type="datetime-local" id="dateInput">
+        <button onclick="fetchWithDate()">Get Data</button>
+    </div>
+</main>
+
+<script>
+// Utility function to convert radians to degrees string
+function degStr(rad, digits=1) {
+    if (rad === null || rad === undefined) return 'N/A';
+    return `${(rad * 180 / Math.PI).toFixed(digits)}°`;
+}
+
+// Function to format angular size
+function formatAngularSize(arcsec) {
+    if (arcsec === null || arcsec === undefined) return 'N/A';
+
+    const num = parseFloat(arcsec);
+    if (isNaN(num)) return arcsec;
+
+    if (num >= 3600) {
+        return `${(num / 3600).toFixed(2)}°`;
+    } else if (num >= 60) {
+        return `${(num / 60).toFixed(1)}'`;
+    } else {
+        return `${num.toFixed(1)}"`;
+    }
+}
+
+// Function to create DOM elements with attributes and content
+function createElement(tag, attributes = {}, content = null) {
+    const element = document.createElement(tag);
+
+    // Set attributes
+    Object.keys(attributes).forEach(key => {
+        element.setAttribute(key, attributes[key]);
+    });
+
+    // Handle content
+    if (content !== null) {
+        if (typeof content === 'string') {
+            element.textContent = content;
+        } else if (Array.isArray(content)) {
+            content.forEach(item => {
+                if (typeof item === 'string') {
+                    element.appendChild(document.createTextNode(item));
+                } else if (item instanceof Node) {
+                    element.appendChild(item);
+                }
+            });
+        } else if (content instanceof Node) {
+            element.appendChild(content);
+        }
+    }
+
+    return element;
+}
+
+// Function to create a text node wrapped in a span with label class
+function createLabeledText(label, text) {
+    return createElement('p', {}, [
+        createElement('span', {class: 'label'}, `${label}: `),
+        document.createTextNode(text)
+    ]);
+}
+
+// Function to format hour angle strings
+function formatHourAngle(angleStr) {
+    if (!angleStr || angleStr === 'N/A') return 'N/A';
+
+    // If it's already in the correct format, just return it
+    if (angleStr.includes(':')) return angleStr;
+
+    // Otherwise, try to convert from radians
+    try {
+        const angleRad = parseFloat(angleStr);
+        return !isNaN(angleRad) ? degStr(angleRad, 1) : angleStr;
+    } catch (e) {
+        return angleStr;
+    }
+}
+
+// Function to format numeric values
+function formatNumber(value, decimals=1) {
+    if (value === null || value === undefined) return 'N/A';
+
+    const num = parseFloat(value);
+    return isNaN(num) ? value : num.toFixed(decimals);
+}
+
+async function fetchAstro(dateStr = '') {
+    let url = '/api/astro';
+    if (dateStr) url += '?date=' + encodeURIComponent(dateStr);
+
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        displayData(data);
+    } catch (error) {
+        displayError(error);
+    }
+}
+
+function fetchWithDate() {
+    const dateInput = document.getElementById('dateInput');
+    fetchAstro(dateInput.value);
+}
+
+function displayError(error) {
+    const container = document.getElementById('content');
+    container.innerHTML = '';
+
+    const errorDiv = createElement('div', {class: 'error'}, [
+        'Error fetching data: ',
+        error.message
+    ]);
+
+    container.appendChild(errorDiv);
+
+    // Add date input back
+    const dateInputDiv = createElement('div', {class: 'date-input'}, [
+        createElement('input', {type: 'datetime-local', id: 'dateInput'}),
+        createElement('button', {onclick: 'fetchWithDate()'}, 'Get Data')
+    ]);
+
+    container.appendChild(dateInputDiv);
+}
+
+function displayData(data) {
+    const container = document.getElementById('content');
+    container.innerHTML = '';
+
+    // Add date input
+    const dateInputDiv = createElement('div', {class: 'date-input'}, [
+        createElement('input', {type: 'datetime-local', id: 'dateInput'}),
+        createElement('button', {onclick: 'fetchWithDate()'}, 'Get Data')
+    ]);
+
+    container.appendChild(dateInputDiv);
+
+    // Header info
+    const headerDiv = createElement('div');
+    headerDiv.appendChild(createLabeledText('Query Date', data.query_date || 'N/A'));
+    headerDiv.appendChild(createLabeledText('Julian Date', data.julian_date ? data.julian_date.toString() : 'N/A'));
+    headerDiv.appendChild(createLabeledText('Lunation', data.lunation ? data.lunation.toString() : 'N/A'));
+    headerDiv.appendChild(createLabeledText('Islamic Lunation', data.islamic_lunation ? data.islamic_lunation.toString() : 'N/A'));
+    headerDiv.appendChild(createLabeledText('Greenwich Sidereal Time', data.greenwich_sidereal_time || 'N/A'));
+
+    container.appendChild(headerDiv);
+
+    // Cities
+    for (const cityName in data.cities) {
+        const city = data.cities[cityName];
+
+        const cityDiv = createElement('div', {class: 'city'});
+        cityDiv.appendChild(createElement('h2', {}, city.name || cityName));
+
+        cityDiv.appendChild(createLabeledText('Location',
+            `${degStr(city.lat, 2) || 'N/A'}, ${degStr(city.lon, 2) || 'N/A'}, ${city.elevation ? `${city.elevation}m` : 'N/A'}`));
+
+        cityDiv.appendChild(createLabeledText('Sidereal Time', city.sidereal_time || 'N/A'));
+
+        cityDiv.appendChild(createElement('h3', {}, 'Celestial Bodies:'));
+
+        // Bodies - now an object, not an array
+        const bodies = city.bodies || {};
+
+        // Define the order of bodies to display
+        const bodyOrder = ['Sun', 'Moon', 'Venus', 'Mars', 'Jupiter', 'Saturn'];
+
+        // Create body cards in the specified order
+        bodyOrder.forEach(bodyName => {
+            if (bodies[bodyName]) {
+                const body = bodies[bodyName];
+                const bodyCard = createElement('div', {class: 'body-card'});
+
+                bodyCard.appendChild(createElement('h4', {}, body.name || bodyName));
+
+                // Create three-column layout
+                const dataContainer = createElement('div', {class: 'data-container'});
+
+                // Column 1: Position Data
+                const col1 = createElement('div', {class: 'data-column'});
+                const positionSection = createElement('div', {class: 'data-section'});
+                positionSection.appendChild(createElement('h4', {}, 'Position Data'));
+                positionSection.appendChild(createLabeledText('Altitude', body.alt ? degStr(body.alt, 1) : 'N/A'));
+                positionSection.appendChild(createLabeledText('Azimuth', body.az ? degStr(body.az, 1) : 'N/A'));
+                positionSection.appendChild(createLabeledText('RA', body.ra || 'N/A'));
+                positionSection.appendChild(createLabeledText('Dec', body.dec ? degStr(body.dec, 1) : 'N/A'));
+                positionSection.appendChild(createLabeledText('Hour Angle', formatHourAngle(body.hour_angle)));
+                positionSection.appendChild(createLabeledText('Elongation', body.elong ? degStr(body.elong, 1) : 'N/A'));
+                col1.appendChild(positionSection);
+
+                // Column 2: Additional Data
+                const col2 = createElement('div', {class: 'data-column'});
+                const additionalSection = createElement('div', {class: 'data-section'});
+                additionalSection.appendChild(createElement('h4', {}, 'Additional Data'));
+                additionalSection.appendChild(createLabeledText('Magnitude', body.mag || 'N/A'));
+                additionalSection.appendChild(createLabeledText('Constellation', body.constellation || 'N/A'));
+                additionalSection.appendChild(createLabeledText('Size', body.size ? formatAngularSize(body.size) : 'N/A'));
+
+                if (body.radius) {
+                    additionalSection.appendChild(createLabeledText('Radius', body.radius ? formatAngularSize(body.radius * 3600) : 'N/A'));
+                }
+
+                if (body.phase) {
+                    additionalSection.appendChild(createLabeledText('Phase', body.phase ? `${formatNumber(body.phase, 1)}%` : 'N/A'));
+                }
+
+                if (body.hlon) {
+                    additionalSection.appendChild(createLabeledText('Helio Longitude', body.hlon ? degStr(body.hlon, 1) : 'N/A'));
+                }
+
+                if (body.hlat) {
+                    additionalSection.appendChild(createLabeledText('Helio Latitude', body.hlat ? degStr(body.hlat, 1) : 'N/A'));
+                }
+
+                col2.appendChild(additionalSection);
+
+                // Column 3: Distance and Times
+                const col3 = createElement('div', {class: 'data-column'});
+                const distanceSection = createElement('div', {class: 'data-section'});
+                distanceSection.appendChild(createElement('h4', {}, 'Distances'));
+
+                if (body.earth_distance) {
+                    distanceSection.appendChild(createLabeledText('Earth Distance', body.earth_distance ? `${formatNumber(body.earth_distance, 2)} AU` : 'N/A'));
+                }
+
+                if (body.sun_distance) {
+                    distanceSection.appendChild(createLabeledText('Sun Distance', body.sun_distance ? `${formatNumber(body.sun_distance, 2)} AU` : 'N/A'));
+                }
+
+                col3.appendChild(distanceSection);
+
+                const timesSection = createElement('div', {class: 'data-section'});
+                timesSection.appendChild(createElement('h4', {}, 'Rise/Set Times'));
+                timesSection.appendChild(createLabeledText('Next Rising', body.next_rising || 'N/A'));
+                timesSection.appendChild(createLabeledText('Next Transit', body.next_transit || 'N/A'));
+                timesSection.appendChild(createLabeledText('Next Setting', body.next_setting || 'N/A'));
+                col3.appendChild(timesSection);
+
+                // Add columns to container
+                dataContainer.appendChild(col1);
+                dataContainer.appendChild(col2);
+                dataContainer.appendChild(col3);
+
+                bodyCard.appendChild(dataContainer);
+                cityDiv.appendChild(bodyCard);
+            }
+        });
+
+        container.appendChild(cityDiv);
+    }
+
+    // Global events
+    const eventsDiv = createElement('div');
+    eventsDiv.appendChild(createElement('h3', {}, 'Global Events:'));
+
+    const eventsContainer = createElement('div', {class: 'data-container'});
+
+    const eventsCol1 = createElement('div', {class: 'data-column'});
+    eventsCol1.appendChild(createLabeledText('Next Equinox', data.next_equinox || 'N/A'));
+    eventsCol1.appendChild(createLabeledText('Next Solstice', data.next_solstice || 'N/A'));
+    eventsCol1.appendChild(createLabeledText('Previous New Moon', data.previous_new_moon || 'N/A'));
+
+    const eventsCol2 = createElement('div', {class: 'data-column'});
+    eventsCol2.appendChild(createLabeledText('Next New Moon', data.next_new_moon || 'N/A'));
+    eventsCol2.appendChild(createLabeledText('Next First Quarter', data.next_first_quarter || 'N/A'));
+    eventsCol2.appendChild(createLabeledText('Next Full Moon', data.next_full_moon || 'N/A'));
+
+    const eventsCol3 = createElement('div', {class: 'data-column'});
+    eventsCol3.appendChild(createLabeledText('Next Last Quarter', data.next_last_quarter || 'N/A'));
+    eventsCol3.appendChild(createLabeledText('Age of Moon (days)', data.age_of_moon_days || 'N/A'));
+    eventsCol3.appendChild(createLabeledText('Moon-Sun Separation',
+        data.moon_sun_separation ? degStr(data.moon_sun_separation, 1) : 'N/A'));
+
+    eventsContainer.appendChild(eventsCol1);
+    eventsContainer.appendChild(eventsCol2);
+    eventsContainer.appendChild(eventsCol3);
+
+    eventsDiv.appendChild(eventsContainer);
+    container.appendChild(eventsDiv);
+}
+
+// Call the function
+fetchAstro(); // default current date
+</script>
+</body>
+</html>
