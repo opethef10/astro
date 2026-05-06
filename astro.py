@@ -1,5 +1,5 @@
 # api/astro.py
-from math import pi
+from math import tau
 
 import ephem
 from ephem import (
@@ -43,13 +43,18 @@ def get_body_data(body_class, observer: Observer, sidereal_time):
     body = body_class()
     body.compute(observer)
 
+    # Normalize hour angle to [-tau/2, +tau/2] range in radians, then convert to string
+    ha_rad = sidereal_time - body.ra
+    ha_rad = ((ha_rad + tau / 2) % tau) - tau / 2
+    hour_angle_str = str(hours(ha_rad))
+
     data = {
         "name": getattr(body, "name", body.__class__.__name__),
         "alt": body.alt,  # Keep as radians
         "az": body.az,    # Keep as radians
         "ra": str(body.ra),
         "dec": body.dec,  # Keep as radians
-        "hour_angle": str(hours(sidereal_time - body.ra)),
+        "hour_angle": hour_angle_str,
         "elong": body.elong,
         "mag": body.mag,
         "size": body.size,
@@ -107,7 +112,7 @@ def compute_all(when: Date):
                 "lon": obs.lon,
                 "elevation": obs.elevation,
                 "sidereal_time": str(sidereal_time),
-                "sidereal_offset_from_greenwich": str(hours((sidereal_time - greenwich_sidereal) % (2 * pi))),
+                "sidereal_offset_from_greenwich": str(hours((sidereal_time - greenwich_sidereal) % tau)),
                 "bodies": {},
             }
 
