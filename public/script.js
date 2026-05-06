@@ -149,6 +149,35 @@ function displayData(data) {
 
     container.appendChild(headerDiv);
 
+    // Global events
+    const eventsDiv = createElement('div', {class: 'events-section'});
+    eventsDiv.appendChild(createElement('h3', {}, 'Global Events:'));
+
+    const eventsContainer = createElement('div', {class: 'data-container'});
+
+    const eventsCol1 = createElement('div', {class: 'data-column'});
+    eventsCol1.appendChild(createLabeledText('Next Equinox', data.next_equinox || 'N/A', 'When day/night are equal length (~Mar 20, ~Sep 22)'));
+    eventsCol1.appendChild(createLabeledText('Next Solstice', data.next_solstice || 'N/A', 'When Sun reaches highest/lowest point (longest/shortest day)'));
+    eventsCol1.appendChild(createLabeledText('Previous New Moon', data.previous_new_moon || 'N/A', 'Last time Moon was between Earth and Sun'));
+
+    const eventsCol2 = createElement('div', {class: 'data-column'});
+    eventsCol2.appendChild(createLabeledText('Next New Moon', data.next_new_moon || 'N/A', 'Next time Moon will be between Earth and Sun'));
+    eventsCol2.appendChild(createLabeledText('Next First Quarter', data.next_first_quarter || 'N/A', 'Next half-illuminated Moon (waxing)'));
+    eventsCol2.appendChild(createLabeledText('Next Full Moon', data.next_full_moon || 'N/A', 'Next completely illuminated Moon'));
+
+    const eventsCol3 = createElement('div', {class: 'data-column'});
+    eventsCol3.appendChild(createLabeledText('Next Last Quarter', data.next_last_quarter || 'N/A', 'Next half-illuminated Moon (waning)'));
+    eventsCol3.appendChild(createLabeledText('Age of Moon (days)', data.age_of_moon_days || 'N/A', 'Days since last new moon'));
+    eventsCol3.appendChild(createLabeledText('Moon-Sun Separation',
+        data.moon_sun_separation ? degStr(data.moon_sun_separation, 1) : 'N/A', 'Angular distance between Moon and Sun'));
+
+    eventsContainer.appendChild(eventsCol1);
+    eventsContainer.appendChild(eventsCol2);
+    eventsContainer.appendChild(eventsCol3);
+
+    eventsDiv.appendChild(eventsContainer);
+    container.appendChild(eventsDiv);
+
     // Cities
     for (const cityName in data.cities) {
         const city = data.cities[cityName];
@@ -252,35 +281,6 @@ function displayData(data) {
 
         container.appendChild(cityDiv);
     }
-
-    // Global events
-    const eventsDiv = createElement('div');
-    eventsDiv.appendChild(createElement('h3', {}, 'Global Events:'));
-
-    const eventsContainer = createElement('div', {class: 'data-container'});
-
-    const eventsCol1 = createElement('div', {class: 'data-column'});
-    eventsCol1.appendChild(createLabeledText('Next Equinox', data.next_equinox || 'N/A', 'When day/night are equal length (~Mar 20, ~Sep 22)'));
-    eventsCol1.appendChild(createLabeledText('Next Solstice', data.next_solstice || 'N/A', 'When Sun reaches highest/lowest point (longest/shortest day)'));
-    eventsCol1.appendChild(createLabeledText('Previous New Moon', data.previous_new_moon || 'N/A', 'Last time Moon was between Earth and Sun'));
-
-    const eventsCol2 = createElement('div', {class: 'data-column'});
-    eventsCol2.appendChild(createLabeledText('Next New Moon', data.next_new_moon || 'N/A', 'Next time Moon will be between Earth and Sun'));
-    eventsCol2.appendChild(createLabeledText('Next First Quarter', data.next_first_quarter || 'N/A', 'Next half-illuminated Moon (waxing)'));
-    eventsCol2.appendChild(createLabeledText('Next Full Moon', data.next_full_moon || 'N/A', 'Next completely illuminated Moon'));
-
-    const eventsCol3 = createElement('div', {class: 'data-column'});
-    eventsCol3.appendChild(createLabeledText('Next Last Quarter', data.next_last_quarter || 'N/A', 'Next half-illuminated Moon (waning)'));
-    eventsCol3.appendChild(createLabeledText('Age of Moon (days)', data.age_of_moon_days || 'N/A', 'Days since last new moon'));
-    eventsCol3.appendChild(createLabeledText('Moon-Sun Separation',
-        data.moon_sun_separation ? degStr(data.moon_sun_separation, 1) : 'N/A', 'Angular distance between Moon and Sun'));
-
-    eventsContainer.appendChild(eventsCol1);
-    eventsContainer.appendChild(eventsCol2);
-    eventsContainer.appendChild(eventsCol3);
-
-    eventsDiv.appendChild(eventsContainer);
-    container.appendChild(eventsDiv);
 }
 
 // Call the function

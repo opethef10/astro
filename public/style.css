@@ -88,6 +88,9 @@ button:hover {
     border-bottom: 1px solid #45a29e;
     padding-bottom: 0.3rem;
 }
+.events-section {
+    margin-bottom: 2rem;
+}
 .tooltip {
     position: relative;
     cursor: help;
