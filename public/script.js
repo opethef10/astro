@@ -54,9 +54,7 @@ function createLabeledText(label, text, tooltip = null) {
     const labelSpan = createElement('span', {class: 'label'}, `${label}: `);
 
     if (tooltip) {
-        const tooltipSpan = createElement('span', {class: 'tooltip', 'data-tooltip': tooltip}, '');
-        tooltipSpan.appendChild(labelSpan);
-        return createElement('p', {}, [tooltipSpan, document.createTextNode(text)]);
+        labelSpan.setAttribute('data-tooltip', tooltip);
     }
 
     return createElement('p', {}, [labelSpan, document.createTextNode(text)]);
@@ -102,7 +100,8 @@ function getGeolocation() {
             const lon = position.coords.longitude;
             const name = `GPS Location (${lat.toFixed(2)}, ${lon.toFixed(2)})`;
             locations = [{name, lat, lon, elevation: 0}];
-            document.getElementById('locationInfo').textContent = `Ready: ${name}`;
+            const now = new Date().toLocaleTimeString();
+            document.getElementById('locationInfo').innerHTML = `<strong>Selected Location:</strong> ${name}<br><small>Selected at: ${now}</small>`;
         },
         (error) => {
             alert("Unable to retrieve location: " + error.message);
@@ -123,7 +122,8 @@ function addCustomLocation() {
     }
 
     locations = [{name, lat, lon, elevation: elev}];
-    document.getElementById('locationInfo').textContent = `Ready: ${name}`;
+    const now = new Date().toLocaleTimeString();
+    document.getElementById('locationInfo').innerHTML = `<strong>Selected Location:</strong> ${name}<br><small>Selected at: ${now}</small>`;
 }
 
 async function fetchAstro(dateStr = '') {
@@ -187,39 +187,42 @@ function displayError(error) {
 function initLocationControls() {
     const container = document.getElementById('content');
 
-    // Add location controls
-    const locationDiv = createElement('div', {class: 'location-controls', style: 'margin-bottom:1rem;padding:0.5rem;background:#1f2833;border-radius:5px;'});
+    // Add location controls with Bootstrap classes
+    const locationDiv = createElement('div', {class: 'location-controls container-fluid p-3 mb-3 rounded', style: 'background:#1f2833;'});
 
-    const gpsButton = createElement('button', {onclick: 'getGeolocation()', style: 'margin-right:0.5rem;'}, 'Use GPS Location');
+    const gpsButton = createElement('button', {class: 'btn btn-primary me-2', onclick: 'getGeolocation()'}, 'Use GPS Location');
     locationDiv.appendChild(gpsButton);
 
-    const privacyNotice = createElement('div', {style: 'font-size:0.8rem;color:#888;margin-top:0.3rem;'}, 'This website doesn\'t use a database. The coordinates are used for calculation and never saved.');
+    const privacyNotice = createElement('div', {class: 'small text-muted mt-2'}, 'This website doesn\'t use a database. The coordinates are used for calculation and never saved.');
     locationDiv.appendChild(privacyNotice);
 
-    const inputDiv = createElement('div', {style: 'margin-top:0.5rem;'});
+    const inputDiv = createElement('div', {class: 'row g-2 mt-2'});
 
-    inputDiv.appendChild(createElement('input', {type: 'text', id: 'customName', placeholder: 'Location name', style: 'width:120px;margin-right:0.5rem;'}));
-    inputDiv.appendChild(createElement('input', {type: 'number', id: 'customLat', placeholder: 'Latitude', step: 'any', style: 'width:100px;margin-right:0.5rem;'}));
-    inputDiv.appendChild(createElement('input', {type: 'number', id: 'customLon', placeholder: 'Longitude', step: 'any', style: 'width:100px;margin-right:0.5rem;'}));
-    inputDiv.appendChild(createElement('input', {type: 'number', id: 'customElev', placeholder: 'Elevation (m)', style: 'width:100px;margin-right:0.5rem;'}));
-    inputDiv.appendChild(createElement('button', {onclick: 'addCustomLocation()'}, 'Add Location'));
+    inputDiv.appendChild(createElement('div', {class: 'col-md-3'}, [createElement('input', {type: 'text', id: 'customName', class: 'form-control', placeholder: 'Location name'})]));
+    inputDiv.appendChild(createElement('div', {class: 'col-md-3'}, [createElement('input', {type: 'number', id: 'customLat', class: 'form-control', placeholder: 'Latitude', step: 'any'})]));
+    inputDiv.appendChild(createElement('div', {class: 'col-md-3'}, [createElement('input', {type: 'number', id: 'customLon', class: 'form-control', placeholder: 'Longitude', step: 'any'})]));
+    inputDiv.appendChild(createElement('div', {class: 'col-md-2'}, [createElement('input', {type: 'number', id: 'customElev', class: 'form-control', placeholder: 'Elevation (m)'})]));
+    inputDiv.appendChild(createElement('div', {class: 'col-md-1'}, [createElement('button', {class: 'btn btn-primary w-100', onclick: 'addCustomLocation()'}, 'Add')]));
 
     locationDiv.appendChild(inputDiv);
 
-    const locationInfo = createElement('div', {id: 'locationInfo', style: 'margin-top:0.3rem;'}, 'No location selected');
+    const locationInfo = createElement('div', {id: 'locationInfo', class: 'mt-2 small text-muted'}, 'No location selected');
     locationDiv.appendChild(locationInfo);
 
-    // Add date input to the same controls section
-    const dateInputDiv = createElement('div', {class: 'date-input', style: 'margin-top:0.5rem;'}, [
-        createElement('input', {type: 'datetime-local', id: 'dateInput'}),
-        createElement('button', {onclick: 'fetchWithDate()'}, 'Get Data')
-    ]);
+    // Add date input with Bootstrap and UTC indicator
+    const dateInputDiv = createElement('div', {class: 'row g-2 mt-3'});
+    const dateInputCol = createElement('div', {class: 'col-md-4'});
+    dateInputCol.appendChild(createElement('input', {type: 'datetime-local', id: 'dateInput', class: 'form-control'}));
+    dateInputDiv.appendChild(dateInputCol);
+    const utcLabel = createElement('div', {class: 'col-md-2 d-flex align-items-center'}, '(UTC)');
+    dateInputDiv.appendChild(utcLabel);
+    dateInputDiv.appendChild(createElement('div', {class: 'col-md-2'}, [createElement('button', {class: 'btn btn-primary w-100', onclick: 'fetchWithDate()'}, 'Get Data')]));
     locationDiv.appendChild(dateInputDiv);
 
     container.appendChild(locationDiv);
 
     // Show prompt
-    const msg = createElement('div', {class: 'loading', style: 'margin-top:1rem;'}, 'Please select a location using GPS or enter custom coordinates, then click "Get Data".');
+    const msg = createElement('div', {class: 'loading mt-3 text-center'}, 'Please select a location using GPS or enter custom coordinates, then click "Get Data".');
     container.appendChild(msg);
 }
 
@@ -230,8 +233,11 @@ function displayData(data) {
     container.innerHTML = '';
     if (existingLocation) container.appendChild(existingLocation);
 
-    // Clear location info after successful fetch
-    document.getElementById('locationInfo').textContent = '';
+    // Update location info to show it's loaded (not selected)
+    const locInfo = document.getElementById('locationInfo');
+    if (locInfo && locations.length) {
+        locInfo.innerHTML = `<strong>Loaded Location:</strong> ${locations[0].name}`;
+    }
 
     // Header info
     const headerDiv = createElement('div');
