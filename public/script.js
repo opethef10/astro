@@ -49,12 +49,17 @@ function createElement(tag, attributes = {}, content = null) {
     return element;
 }
 
-// Function to create a text node wrapped in a span with label class
-function createLabeledText(label, text) {
-    return createElement('p', {}, [
-        createElement('span', {class: 'label'}, `${label}: `),
-        document.createTextNode(text)
-    ]);
+// Function to create a text node wrapped in a span with label class and optional tooltip
+function createLabeledText(label, text, tooltip = null) {
+    const labelSpan = createElement('span', {class: 'label'}, `${label}: `);
+
+    if (tooltip) {
+        const tooltipSpan = createElement('span', {class: 'tooltip', 'data-tooltip': tooltip}, '');
+        tooltipSpan.appendChild(labelSpan);
+        return createElement('p', {}, [tooltipSpan, document.createTextNode(text)]);
+    }
+
+    return createElement('p', {}, [labelSpan, document.createTextNode(text)]);
 }
 
 // Function to format hour angle strings
@@ -136,11 +141,11 @@ function displayData(data) {
 
     // Header info
     const headerDiv = createElement('div');
-    headerDiv.appendChild(createLabeledText('Query Date', data.query_date || 'N/A'));
-    headerDiv.appendChild(createLabeledText('Julian Date', data.julian_date ? data.julian_date.toString() : 'N/A'));
-    headerDiv.appendChild(createLabeledText('Lunation', data.lunation ? data.lunation.toString() : 'N/A'));
-    headerDiv.appendChild(createLabeledText('Islamic Lunation', data.islamic_lunation ? data.islamic_lunation.toString() : 'N/A'));
-    headerDiv.appendChild(createLabeledText('Greenwich Sidereal Time', data.greenwich_sidereal_time || 'N/A'));
+    headerDiv.appendChild(createLabeledText('Query Date', data.query_date || 'N/A', 'The date/time for which data is calculated'));
+    headerDiv.appendChild(createLabeledText('Julian Date', data.julian_date ? data.julian_date.toString() : 'N/A', 'Days since Jan 1, 4713 BC (astronomical dating system)'));
+    headerDiv.appendChild(createLabeledText('Lunation', data.lunation ? data.lunation.toString() : 'N/A', 'Number of lunar cycles since reference new moon'));
+    headerDiv.appendChild(createLabeledText('Islamic Lunation', data.islamic_lunation ? data.islamic_lunation.toString() : 'N/A', 'Lunar months since Islamic calendar start (July 16, 622 CE)'));
+    headerDiv.appendChild(createLabeledText('Greenwich Sidereal Time', data.greenwich_sidereal_time || 'N/A', 'Time based on Earth rotation relative to fixed stars'));
 
     container.appendChild(headerDiv);
 
@@ -179,36 +184,36 @@ function displayData(data) {
                 const col1 = createElement('div', {class: 'data-column'});
                 const positionSection = createElement('div', {class: 'data-section'});
                 positionSection.appendChild(createElement('h4', {}, 'Position Data'));
-                positionSection.appendChild(createLabeledText('Altitude', body.alt ? degStr(body.alt, 1) : 'N/A'));
-                positionSection.appendChild(createLabeledText('Azimuth', body.az ? degStr(body.az, 1) : 'N/A'));
-                positionSection.appendChild(createLabeledText('RA', body.ra || 'N/A'));
-                positionSection.appendChild(createLabeledText('Dec', body.dec ? degStr(body.dec, 1) : 'N/A'));
-                positionSection.appendChild(createLabeledText('Hour Angle', formatHourAngle(body.hour_angle)));
-                positionSection.appendChild(createLabeledText('Elongation', body.elong ? degStr(body.elong, 1) : 'N/A'));
+                positionSection.appendChild(createLabeledText('Altitude', body.alt ? degStr(body.alt, 1) : 'N/A', 'Angle above the horizon (0°=horizon, 90°=zenith)'));
+                positionSection.appendChild(createLabeledText('Azimuth', body.az ? degStr(body.az, 1) : 'N/A', 'Compass direction (0°=N, 90°=E, 180°=S, 270°=W)'));
+                positionSection.appendChild(createLabeledText('RA', body.ra || 'N/A', 'Right Ascension - celestial longitude measured eastward'));
+                positionSection.appendChild(createLabeledText('Dec', body.dec ? degStr(body.dec, 1) : 'N/A', 'Declination - celestial latitude measured north/south of equator'));
+                positionSection.appendChild(createLabeledText('Hour Angle', formatHourAngle(body.hour_angle), 'Angular distance west of the meridian'));
+                positionSection.appendChild(createLabeledText('Elongation', body.elong ? degStr(body.elong, 1) : 'N/A', 'Angular separation from the Sun'));
                 col1.appendChild(positionSection);
 
                 // Column 2: Additional Data
                 const col2 = createElement('div', {class: 'data-column'});
                 const additionalSection = createElement('div', {class: 'data-section'});
                 additionalSection.appendChild(createElement('h4', {}, 'Additional Data'));
-                additionalSection.appendChild(createLabeledText('Magnitude', body.mag || 'N/A'));
-                additionalSection.appendChild(createLabeledText('Constellation', body.constellation || 'N/A'));
-                additionalSection.appendChild(createLabeledText('Size', body.size ? formatAngularSize(body.size) : 'N/A'));
+                additionalSection.appendChild(createLabeledText('Magnitude', body.mag || 'N/A', 'Brightness (lower number = brighter)'));
+                additionalSection.appendChild(createLabeledText('Constellation', body.constellation || 'N/A', 'The constellation the object appears in'));
+                additionalSection.appendChild(createLabeledText('Size', body.size ? formatAngularSize(body.size) : 'N/A', 'Apparent angular size in the sky'));
 
                 if (body.radius) {
-                    additionalSection.appendChild(createLabeledText('Radius', body.radius ? formatAngularSize(body.radius * 3600) : 'N/A'));
+                    additionalSection.appendChild(createLabeledText('Radius', body.radius ? formatAngularSize(body.radius * 3600) : 'N/A', 'Physical radius of the object'));
                 }
 
                 if (body.phase) {
-                    additionalSection.appendChild(createLabeledText('Phase', body.phase ? `${formatNumber(body.phase, 1)}%` : 'N/A'));
+                    additionalSection.appendChild(createLabeledText('Phase', body.phase ? `${formatNumber(body.phase, 1)}%` : 'N/A', 'Illuminated fraction (0%=new, 100%=full)'));
                 }
 
                 if (body.hlon) {
-                    additionalSection.appendChild(createLabeledText('Helio Longitude', body.hlon ? degStr(body.hlon, 1) : 'N/A'));
+                    additionalSection.appendChild(createLabeledText('Helio Longitude', body.hlon ? degStr(body.hlon, 1) : 'N/A', 'Ecliptic longitude measured from Sun'));
                 }
 
                 if (body.hlat) {
-                    additionalSection.appendChild(createLabeledText('Helio Latitude', body.hlat ? degStr(body.hlat, 1) : 'N/A'));
+                    additionalSection.appendChild(createLabeledText('Helio Latitude', body.hlat ? degStr(body.hlat, 1) : 'N/A', 'Ecliptic latitude measured from Sun'));
                 }
 
                 col2.appendChild(additionalSection);
@@ -219,20 +224,20 @@ function displayData(data) {
                 distanceSection.appendChild(createElement('h4', {}, 'Distances'));
 
                 if (body.earth_distance) {
-                    distanceSection.appendChild(createLabeledText('Earth Distance', body.earth_distance ? `${formatNumber(body.earth_distance, 2)} AU` : 'N/A'));
+                    distanceSection.appendChild(createLabeledText('Earth Distance', body.earth_distance ? `${formatNumber(body.earth_distance, 2)} AU` : 'N/A', 'Distance from Earth in Astronomical Units (1 AU = Earth-Sun distance)'));
                 }
 
                 if (body.sun_distance) {
-                    distanceSection.appendChild(createLabeledText('Sun Distance', body.sun_distance ? `${formatNumber(body.sun_distance, 2)} AU` : 'N/A'));
+                    distanceSection.appendChild(createLabeledText('Sun Distance', body.sun_distance ? `${formatNumber(body.sun_distance, 2)} AU` : 'N/A', 'Distance from the Sun in Astronomical Units'));
                 }
 
                 col3.appendChild(distanceSection);
 
                 const timesSection = createElement('div', {class: 'data-section'});
                 timesSection.appendChild(createElement('h4', {}, 'Rise/Set Times'));
-                timesSection.appendChild(createLabeledText('Next Rising', body.next_rising || 'N/A'));
-                timesSection.appendChild(createLabeledText('Next Transit', body.next_transit || 'N/A'));
-                timesSection.appendChild(createLabeledText('Next Setting', body.next_setting || 'N/A'));
+                timesSection.appendChild(createLabeledText('Next Rising', body.next_rising || 'N/A', 'When the object next rises above horizon'));
+                timesSection.appendChild(createLabeledText('Next Transit', body.next_transit || 'N/A', 'When the object next crosses the meridian (highest point)'));
+                timesSection.appendChild(createLabeledText('Next Setting', body.next_setting || 'N/A', 'When the object next sets below horizon'));
                 col3.appendChild(timesSection);
 
                 // Add columns to container
@@ -255,20 +260,20 @@ function displayData(data) {
     const eventsContainer = createElement('div', {class: 'data-container'});
 
     const eventsCol1 = createElement('div', {class: 'data-column'});
-    eventsCol1.appendChild(createLabeledText('Next Equinox', data.next_equinox || 'N/A'));
-    eventsCol1.appendChild(createLabeledText('Next Solstice', data.next_solstice || 'N/A'));
-    eventsCol1.appendChild(createLabeledText('Previous New Moon', data.previous_new_moon || 'N/A'));
+    eventsCol1.appendChild(createLabeledText('Next Equinox', data.next_equinox || 'N/A', 'When day/night are equal length (~Mar 20, ~Sep 22)'));
+    eventsCol1.appendChild(createLabeledText('Next Solstice', data.next_solstice || 'N/A', 'When Sun reaches highest/lowest point (longest/shortest day)'));
+    eventsCol1.appendChild(createLabeledText('Previous New Moon', data.previous_new_moon || 'N/A', 'Last time Moon was between Earth and Sun'));
 
     const eventsCol2 = createElement('div', {class: 'data-column'});
-    eventsCol2.appendChild(createLabeledText('Next New Moon', data.next_new_moon || 'N/A'));
-    eventsCol2.appendChild(createLabeledText('Next First Quarter', data.next_first_quarter || 'N/A'));
-    eventsCol2.appendChild(createLabeledText('Next Full Moon', data.next_full_moon || 'N/A'));
+    eventsCol2.appendChild(createLabeledText('Next New Moon', data.next_new_moon || 'N/A', 'Next time Moon will be between Earth and Sun'));
+    eventsCol2.appendChild(createLabeledText('Next First Quarter', data.next_first_quarter || 'N/A', 'Next half-illuminated Moon (waxing)'));
+    eventsCol2.appendChild(createLabeledText('Next Full Moon', data.next_full_moon || 'N/A', 'Next completely illuminated Moon'));
 
     const eventsCol3 = createElement('div', {class: 'data-column'});
-    eventsCol3.appendChild(createLabeledText('Next Last Quarter', data.next_last_quarter || 'N/A'));
-    eventsCol3.appendChild(createLabeledText('Age of Moon (days)', data.age_of_moon_days || 'N/A'));
+    eventsCol3.appendChild(createLabeledText('Next Last Quarter', data.next_last_quarter || 'N/A', 'Next half-illuminated Moon (waning)'));
+    eventsCol3.appendChild(createLabeledText('Age of Moon (days)', data.age_of_moon_days || 'N/A', 'Days since last new moon'));
     eventsCol3.appendChild(createLabeledText('Moon-Sun Separation',
-        data.moon_sun_separation ? degStr(data.moon_sun_separation, 1) : 'N/A'));
+        data.moon_sun_separation ? degStr(data.moon_sun_separation, 1) : 'N/A', 'Angular distance between Moon and Sun'));
 
     eventsContainer.appendChild(eventsCol1);
     eventsContainer.appendChild(eventsCol2);
