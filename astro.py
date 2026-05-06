@@ -13,26 +13,17 @@ from ephem import (
 SYNODIC_MONTH = 29.530588867
 LUNATION_BASE = Date("1923/1/17 02:40:50")
 
-# Configuration
-CITIES = {
-    "Didim": ("37:24", "27:15", 85),
-    "Yenikent": ("40:01:00", "32:31:50", 850),
-    "Metu": ("39:54", "32:47", 700),
-    "Elblag": ("54:11", "19:25", 0),
-    "Gdansk": ("54:25", "18:35", 0),
-    "Gdynia": ("54:31", "18:33", 0),
-    "Greenwich": ("51:30", "0", 0),
-}
-
 BODIES = [Sun, Moon, Venus, Mars, Jupiter, Saturn]
 
 
-def make_observer(name: str, when: Date):
+def make_observer(name: str, lat_deg: float, lon_deg: float, elev: int, when: Date):
     """Create an observer for a specific location and time."""
     o = Observer()
     o.name = name
-    lat, lon, elev = CITIES[name]
-    o.lat, o.lon, o.elevation = lat, lon, elev
+    # Convert decimal degrees to radians for ephem
+    o.lat = lat_deg * tau / 360.0
+    o.lon = lon_deg * tau / 360.0
+    o.elevation = elev
     o.date = when
     o.compute_pressure()
     return o
@@ -82,13 +73,13 @@ def get_body_data(body_class, observer: Observer, sidereal_time):
     return data
 
 
-def compute_all(when: Date):
+def compute_all(when: Date, locations: list = None):
     """Compute comprehensive astronomical data for the given time."""
     # Calculate lunation
     lunation = int((when - LUNATION_BASE) / SYNODIC_MONTH) + 1
 
     # Greenwich reference data
-    greenwich_obs = make_observer("Greenwich", when)
+    greenwich_obs = make_observer("Greenwich", 51.5, 0.0, 0, when)
     greenwich_sidereal = greenwich_obs.sidereal_time()
 
     result = {
@@ -100,35 +91,41 @@ def compute_all(when: Date):
         "cities": {},
     }
 
-    # Calculate data for each city
-    for name in ("Gdynia",):  # You can expand this to include more cities
-        try:
-            obs = make_observer(name, when)
-            sidereal_time = obs.sidereal_time()
+    # Calculate data for each location from request
+    if locations:
+        for loc in locations:
+            name = loc.get("name", "Unknown")
+            lat = loc.get("lat")
+            lon = loc.get("lon")
+            elev = loc.get("elevation", 0)
 
-            city_data = {
-                "name": name,
-                "lat": obs.lat,
-                "lon": obs.lon,
-                "elevation": obs.elevation,
-                "sidereal_time": str(sidereal_time),
-                "sidereal_offset_from_greenwich": str(hours((sidereal_time - greenwich_sidereal) % tau)),
-                "bodies": {},
-            }
+            try:
+                obs = make_observer(name, lat, lon, elev, when)
+                sidereal_time = obs.sidereal_time()
 
-            # Calculate data for each celestial body
-            for body_class in BODIES:
-                body_name = body_class.__name__
-                try:
-                    body_data = get_body_data(body_class, obs, sidereal_time)
-                    city_data["bodies"][body_name] = body_data
-                except Exception as e:
-                    city_data["bodies"][body_name] = {"error": str(e)}
+                city_data = {
+                    "name": name,
+                    "lat": float(obs.lat),   # Return as radians for frontend
+                    "lon": float(obs.lon),   # Return as radians for frontend
+                    "elevation": obs.elevation,
+                    "sidereal_time": str(sidereal_time),
+                    "sidereal_offset_from_greenwich": str(hours((sidereal_time - greenwich_sidereal) % tau)),
+                    "bodies": {},
+                }
 
-            result["cities"][name] = city_data
+                # Calculate data for each celestial body
+                for body_class in BODIES:
+                    body_name = body_class.__name__
+                    try:
+                        body_data = get_body_data(body_class, obs, sidereal_time)
+                        city_data["bodies"][body_name] = body_data
+                    except Exception as e:
+                        city_data["bodies"][body_name] = {"error": str(e)}
 
-        except Exception as e:
-            result["cities"][name] = {"error": str(e)}
+                result["cities"][name] = city_data
+
+            except Exception as e:
+                result["cities"][name] = {"error": str(e)}
 
     # Global events
     try:
