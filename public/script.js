@@ -1,3 +1,26 @@
+// Function to convert UTC time string to local timezone display (local only)
+function formatUTCtoLocal(utcStr) {
+    if (!utcStr || utcStr === 'N/A') return 'N/A';
+
+    // API returns "2026-05-06 14:30:00" (UTC)
+    // We need to parse it as UTC
+    const date = new Date(utcStr.replace(' ', 'T') + 'Z');
+
+    if (isNaN(date)) return 'Invalid Date';
+
+    // Use browser's default locale
+    const localStr = date.toLocaleString(undefined, {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+
+    return localStr;
+}
+
 // Utility function to convert radians to degrees string
 function degStr(rad, digits=1) {
     if (rad === null || rad === undefined) return 'N/A';
@@ -151,7 +174,13 @@ async function fetchAstro(dateStr = '') {
     let url = '/api/astro';
     const params = new URLSearchParams();
 
-    if (dateStr) params.append('date', dateStr);
+    if (dateStr) {
+        // Convert local datetime to UTC before sending
+        const localDate = new Date(dateStr);
+        const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000);
+        dateStr = utcDate.toISOString();
+        params.append('date', dateStr);
+    }
 
     params.append('locations', JSON.stringify(locations));
 
@@ -225,13 +254,17 @@ function initLocationControls() {
     const locationInfo = createElement('div', {id: 'locationInfo', class: 'mt-2 small text-muted'}, 'No location selected');
     locationDiv.appendChild(locationInfo);
 
-    // Add date input with Bootstrap and UTC indicator
+    // Add date input with Bootstrap and timezone indicator
     const dateInputDiv = createElement('div', {class: 'row g-2 mt-3'});
     const dateInputCol = createElement('div', {class: 'col-md-4'});
     dateInputCol.appendChild(createElement('input', {type: 'datetime-local', id: 'dateInput', class: 'form-control'}));
     dateInputDiv.appendChild(dateInputCol);
-    const utcLabel = createElement('div', {class: 'col-md-2 d-flex align-items-center'}, '(UTC)');
-    dateInputDiv.appendChild(utcLabel);
+
+    // Show user's timezone
+    const userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const tzLabel = createElement('div', {class: 'col-md-2 d-flex align-items-center'}, `(UTC, ${userTZ})`);
+    dateInputDiv.appendChild(tzLabel);
+
     dateInputDiv.appendChild(createElement('div', {class: 'col-md-2'}, [createElement('button', {class: 'btn btn-primary w-100', onclick: 'fetchWithDate()'}, 'Get Data')]));
     locationDiv.appendChild(dateInputDiv);
 
@@ -257,7 +290,7 @@ function displayData(data) {
 
     // Header info
     const headerDiv = createElement('div');
-    headerDiv.appendChild(createLabeledText('Query Date', data.query_date || 'N/A', 'The date/time for which data is calculated'));
+    headerDiv.appendChild(createLabeledText('Query Date', data.query_date ? formatUTCtoLocal(data.query_date) : 'N/A', 'The date/time for which data is calculated'));
     headerDiv.appendChild(createLabeledText('Julian Date', data.julian_date ? data.julian_date.toString() : 'N/A', 'Days since Jan 1, 4713 BC (astronomical dating system)'));
     headerDiv.appendChild(createLabeledText('Lunation', data.lunation ? data.lunation.toString() : 'N/A', 'Number of lunar cycles since reference new moon'));
     headerDiv.appendChild(createLabeledText('Islamic Lunation', data.islamic_lunation ? data.islamic_lunation.toString() : 'N/A', 'Lunar months since Islamic calendar start (July 16, 622 CE)'));
@@ -272,17 +305,17 @@ function displayData(data) {
     const eventsContainer = createElement('div', {class: 'data-container'});
 
     const eventsCol1 = createElement('div', {class: 'data-column'});
-    eventsCol1.appendChild(createLabeledText('Next Equinox', data.next_equinox || 'N/A', 'When day/night are equal length (~Mar 20, ~Sep 22)'));
-    eventsCol1.appendChild(createLabeledText('Next Solstice', data.next_solstice || 'N/A', 'When Sun reaches highest/lowest point (longest/shortest day)'));
-    eventsCol1.appendChild(createLabeledText('Previous New Moon', data.previous_new_moon || 'N/A', 'Last time Moon was between Earth and Sun'));
+    eventsCol1.appendChild(createLabeledText('Next Equinox', data.next_equinox ? formatUTCtoLocal(data.next_equinox) : 'N/A', 'When day/night are equal length (~Mar 20, ~Sep 22)'));
+    eventsCol1.appendChild(createLabeledText('Next Solstice', data.next_solstice ? formatUTCtoLocal(data.next_solstice) : 'N/A', 'When Sun reaches highest/lowest point (longest/shortest day)'));
+    eventsCol1.appendChild(createLabeledText('Previous New Moon', data.previous_new_moon ? formatUTCtoLocal(data.previous_new_moon) : 'N/A', 'Last time Moon was between Earth and Sun'));
 
     const eventsCol2 = createElement('div', {class: 'data-column'});
-    eventsCol2.appendChild(createLabeledText('Next New Moon', data.next_new_moon || 'N/A', 'Next time Moon will be between Earth and Sun'));
-    eventsCol2.appendChild(createLabeledText('Next First Quarter', data.next_first_quarter || 'N/A', 'Next half-illuminated Moon (waxing)'));
-    eventsCol2.appendChild(createLabeledText('Next Full Moon', data.next_full_moon || 'N/A', 'Next completely illuminated Moon'));
+    eventsCol2.appendChild(createLabeledText('Next New Moon', data.next_new_moon ? formatUTCtoLocal(data.next_new_moon) : 'N/A', 'Next time Moon will be between Earth and Sun'));
+    eventsCol2.appendChild(createLabeledText('Next First Quarter', data.next_first_quarter ? formatUTCtoLocal(data.next_first_quarter) : 'N/A', 'Next half-illuminated Moon (waxing)'));
+    eventsCol2.appendChild(createLabeledText('Next Full Moon', data.next_full_moon ? formatUTCtoLocal(data.next_full_moon) : 'N/A', 'Next completely illuminated Moon'));
 
     const eventsCol3 = createElement('div', {class: 'data-column'});
-    eventsCol3.appendChild(createLabeledText('Next Last Quarter', data.next_last_quarter || 'N/A', 'Next half-illuminated Moon (waning)'));
+    eventsCol3.appendChild(createLabeledText('Next Last Quarter', data.next_last_quarter ? formatUTCtoLocal(data.next_last_quarter) : 'N/A', 'Next half-illuminated Moon (waning)'));
     eventsCol3.appendChild(createLabeledText('Age of Moon (days)', data.age_of_moon_days || 'N/A', 'Days since last new moon'));
     eventsCol3.appendChild(createLabeledText('Moon-Sun Separation',
         data.moon_sun_separation ? degStr(data.moon_sun_separation, 1) : 'N/A', 'Angular distance between Moon and Sun'));
@@ -380,9 +413,9 @@ function displayData(data) {
 
                 const timesSection = createElement('div', {class: 'data-section'});
                 timesSection.appendChild(createElement('h4', {}, 'Rise/Set Times'));
-                timesSection.appendChild(createLabeledText('Next Rising', body.next_rising || 'N/A', 'When the object next rises above horizon'));
-                timesSection.appendChild(createLabeledText('Next Transit', body.next_transit || 'N/A', 'When the object next crosses the meridian (highest point)'));
-                timesSection.appendChild(createLabeledText('Next Setting', body.next_setting || 'N/A', 'When the object next sets below horizon'));
+                timesSection.appendChild(createLabeledText('Next Rising', body.next_rising ? formatUTCtoLocal(body.next_rising) : 'N/A', 'When the object next rises above horizon'));
+                timesSection.appendChild(createLabeledText('Next Transit', body.next_transit ? formatUTCtoLocal(body.next_transit) : 'N/A', 'When the object next crosses the meridian (highest point)'));
+                timesSection.appendChild(createLabeledText('Next Setting', body.next_setting ? formatUTCtoLocal(body.next_setting) : 'N/A', 'When the object next sets below horizon'));
                 col3.appendChild(timesSection);
 
                 // Add columns to container

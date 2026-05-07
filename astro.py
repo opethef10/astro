@@ -64,7 +64,7 @@ def get_body_data(body_class, observer: Observer, sidereal_time):
         for event in ["rising", "transit", "setting"]:
             try:
                 method = getattr(observer, f"next_{event}")
-                data[f"next_{event}"] = Date(method(body)).datetime().strftime("%Y-%m-%d %H:%M:%S UTC")
+                data[f"next_{event}"] = str(Date(method(body)).datetime())
             except (ephem.AlwaysUpError, ephem.NeverUpError):
                 data[f"next_{event}"] = "N/A"
 
@@ -81,7 +81,7 @@ def compute_all(when: Date, locations: list = None):
     greenwich_sidereal = greenwich_obs.sidereal_time()
 
     result = {
-        "query_date": when.datetime().strftime("%Y-%m-%d %H:%M:%S UTC"),
+        "query_date": str(when.datetime()),
         "julian_date": float(julian_date(when)),
         "lunation": lunation,
         "islamic_lunation": lunation + 16085,
@@ -127,22 +127,22 @@ def compute_all(when: Date, locations: list = None):
 
     # Global events
     try:
-        result["next_equinox"] = Date(next_equinox(when)).datetime().strftime("%Y-%m-%d %H:%M:%S UTC")
+        result["next_equinox"] = str(Date(next_equinox(when)).datetime())
     except Exception:
         result["next_equinox"] = None
 
     try:
-        result["next_solstice"] = Date(next_solstice(when)).datetime().strftime("%Y-%m-%d %H:%M:%S UTC")
+        result["next_solstice"] = str(Date(next_solstice(when)).datetime())
     except Exception:
         result["next_solstice"] = None
 
     # Moon events
     try:
-        result["previous_new_moon"] = Date(previous_new_moon(when)).datetime().strftime("%Y-%m-%d %H:%M:%S UTC")
-        result["next_new_moon"] = Date(next_new_moon(when)).datetime().strftime("%Y-%m-%d %H:%M:%S UTC")
-        result["next_first_quarter"] = Date(next_first_quarter_moon(when)).datetime().strftime("%Y-%m-%d %H:%M:%S UTC")
-        result["next_full_moon"] = Date(next_full_moon(when)).datetime().strftime("%Y-%m-%d %H:%M:%S UTC")
-        result["next_last_quarter"] = Date(next_last_quarter_moon(when)).datetime().strftime("%Y-%m-%d %H:%M:%S UTC")
+        result["previous_new_moon"] = str(Date(previous_new_moon(when)).datetime())
+        result["next_new_moon"] = str(Date(next_new_moon(when)).datetime())
+        result["next_first_quarter"] = str(Date(next_first_quarter_moon(when)).datetime())
+        result["next_full_moon"] = str(Date(next_full_moon(when)).datetime())
+        result["next_last_quarter"] = str(Date(next_last_quarter_moon(when)).datetime())
         age_days = float(when - previous_new_moon(when))
         result["age_of_moon_days"] = round(age_days, 1)
     except Exception:
