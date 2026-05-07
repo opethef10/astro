@@ -109,6 +109,16 @@ function getGeolocation() {
     );
 }
 
+// Function to toggle manual form visibility
+function toggleManualForm() {
+    const form = document.getElementById('manualForm');
+    if (form.style.display === 'none') {
+        form.style.display = 'block';
+    } else {
+        form.style.display = 'none';
+    }
+}
+
 // Function to add custom location
 function addCustomLocation() {
     const name = document.getElementById('customName').value || "Custom";
@@ -193,10 +203,15 @@ function initLocationControls() {
     const gpsButton = createElement('button', {class: 'btn btn-primary me-2', onclick: 'getGeolocation()'}, 'Use GPS Location');
     locationDiv.appendChild(gpsButton);
 
+    const manualButton = createElement('button', {class: 'btn btn-secondary', onclick: 'toggleManualForm()'}, 'Manually Type Location');
+    locationDiv.appendChild(manualButton);
+
     const privacyNotice = createElement('div', {class: 'small text-muted mt-2'}, 'This website doesn\'t use a database. The coordinates are used for calculation and never saved.');
     locationDiv.appendChild(privacyNotice);
 
-    const inputDiv = createElement('div', {class: 'row g-2 mt-2'});
+    // Collapsible manual form
+    const manualForm = createElement('div', {id: 'manualForm', class: 'mt-3', style: 'display:none;'});
+    const inputDiv = createElement('div', {class: 'row g-2'});
 
     inputDiv.appendChild(createElement('div', {class: 'col-md-3'}, [createElement('input', {type: 'text', id: 'customName', class: 'form-control', placeholder: 'Location name'})]));
     inputDiv.appendChild(createElement('div', {class: 'col-md-3'}, [createElement('input', {type: 'number', id: 'customLat', class: 'form-control', placeholder: 'Latitude', step: 'any'})]));
@@ -204,7 +219,8 @@ function initLocationControls() {
     inputDiv.appendChild(createElement('div', {class: 'col-md-2'}, [createElement('input', {type: 'number', id: 'customElev', class: 'form-control', placeholder: 'Elevation (m)'})]));
     inputDiv.appendChild(createElement('div', {class: 'col-md-1'}, [createElement('button', {class: 'btn btn-primary w-100', onclick: 'addCustomLocation()'}, 'Add')]));
 
-    locationDiv.appendChild(inputDiv);
+    manualForm.appendChild(inputDiv);
+    locationDiv.appendChild(manualForm);
 
     const locationInfo = createElement('div', {id: 'locationInfo', class: 'mt-2 small text-muted'}, 'No location selected');
     locationDiv.appendChild(locationInfo);
