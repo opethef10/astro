@@ -133,6 +133,52 @@ function getGeolocation() {
     );
 }
 
+// Function to search city using Nominatim API
+async function searchCity(query) {
+    const dropdown = document.getElementById('cityDropdown');
+    dropdown.innerHTML = '<div class="p-2 text-muted">Searching...</div>';
+    dropdown.style.display = 'block';
+
+    try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
+        const results = await response.json();
+
+        if (results.length === 0) {
+            dropdown.innerHTML = '<div class="p-2 text-muted">No results found</div>';
+            return;
+        }
+
+        dropdown.innerHTML = '';
+        results.forEach(result => {
+            const item = createElement('div', {
+                class: 'p-2 cursor-pointer hover-bg-secondary',
+                onclick: `selectCity(${result.lat}, ${result.lon}, "${result.display_name.replace(/"/g, '\\"')}")`
+            }, result.display_name);
+            dropdown.appendChild(item);
+        });
+    } catch (error) {
+        dropdown.innerHTML = '<div class="p-2 text-danger">Error searching</div>';
+    }
+}
+
+// Function to select city and auto-add location
+function selectCity(lat, lon, displayName) {
+    // Hide dropdown
+    document.getElementById('cityDropdown').style.display = 'none';
+    document.getElementById('citySearch').value = '';
+
+    // Extract city name (first part before comma)
+    const cityName = displayName.split(',')[0];
+
+    // Set location
+    locations = [{name: cityName, lat: parseFloat(lat), lon: parseFloat(lon), elevation: 0}];
+    document.getElementById('locationInfo').innerHTML = `<strong>Selected Location:</strong> ${cityName}`;
+
+    // Auto-fetch data
+    const dateInput = document.getElementById('dateInput');
+    fetchAstro(dateInput ? dateInput.value : '');
+}
+
 // Function to toggle manual form visibility
 function toggleManualForm() {
     const form = document.getElementById('manualForm');
@@ -233,6 +279,40 @@ function initLocationControls() {
 
     const manualButton = createElement('button', {class: 'btn btn-secondary', onclick: 'toggleManualForm()'}, 'Manually Type Location');
     locationDiv.appendChild(manualButton);
+
+    // City search with autocomplete
+    const searchDiv = createElement('div', {class: 'row g-2 mt-2'});
+    const searchCol = createElement('div', {class: 'col-md-6 position-relative'});
+
+    const searchInput = createElement('input', {type: 'text', id: 'citySearch', class: 'form-control', placeholder: 'Search city...'});
+    searchCol.appendChild(searchInput);
+
+    // Dropdown for results
+    const dropdown = createElement('div', {id: 'cityDropdown', class: 'position-absolute w-100 mt-1 bg-dark border border-secondary rounded-bottom', style: 'z-index:1000; display:none;'});
+    searchCol.appendChild(dropdown);
+
+    searchDiv.appendChild(searchCol);
+    searchDiv.appendChild(createElement('div', {class: 'col-md-6 d-flex align-items-center small text-muted'}, 'Geocoding by OpenStreetMap'));
+    locationDiv.appendChild(searchDiv);
+
+    // Add event listeners for search
+    let debounceTimer;
+    searchInput.addEventListener('input', (e) => {
+        clearTimeout(debounceTimer);
+        const query = e.target.value.trim();
+        if (query.length < 3) {
+            dropdown.style.display = 'none';
+            return;
+        }
+        debounceTimer = setTimeout(() => searchCity(query), 500);
+    });
+
+    // Close dropdown on click outside
+    document.addEventListener('click', (e) => {
+        if (!searchDiv.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
 
     const privacyNotice = createElement('div', {class: 'small text-muted mt-2'}, 'This website doesn\'t use a database. The coordinates are used for calculation and never saved.');
     locationDiv.appendChild(privacyNotice);
