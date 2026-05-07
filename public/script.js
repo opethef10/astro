@@ -3,22 +3,23 @@ function formatUTCtoLocal(utcStr) {
     if (!utcStr || utcStr === 'N/A') return 'N/A';
 
     // API returns "2026-05-06 14:30:00" (UTC)
-    // We need to parse it as UTC
     const date = new Date(utcStr.replace(' ', 'T') + 'Z');
 
     if (isNaN(date)) return 'Invalid Date';
 
-    // Use browser's default locale
-    const localStr = date.toLocaleString(undefined, {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-    });
+    // Get timezone abbreviation using en-US locale
+    const tzStr = date.toLocaleString('en-US', { timeZoneName: 'short' });
+    const tz = tzStr.split(' ').pop(); // Extract "CEST" from "5/6/2026, 4:30:00 PM CEST"
 
-    return localStr;
+    // Format as YYYY-MM-DD HH:MM:SS in local time
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds} ${tz}`;
 }
 
 // Utility function to convert radians to degrees string
