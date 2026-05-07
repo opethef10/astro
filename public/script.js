@@ -124,8 +124,9 @@ function getGeolocation() {
             const lon = position.coords.longitude;
             const name = `GPS Location (${lat.toFixed(2)}, ${lon.toFixed(2)})`;
             locations = [{name, lat, lon, elevation: 0}];
-            const now = new Date().toLocaleTimeString();
             document.getElementById('locationInfo').innerHTML = `<strong>Selected Location:</strong> ${name}`;
+            const dateInput = document.getElementById('dateInput');
+            fetchAstro(dateInput ? dateInput.value : '');
         },
         (error) => {
             alert("Unable to retrieve location: " + error.message);
