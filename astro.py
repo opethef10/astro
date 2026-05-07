@@ -1,4 +1,5 @@
 # api/astro.py
+import calendar
 from math import tau
 
 import ephem
@@ -82,6 +83,7 @@ def compute_all(when: Date, locations: list = None):
 
     result = {
         "query_date": str(when.datetime()),
+        "unix_timestamp": calendar.timegm(when.datetime().timetuple()),
         "julian_date": float(julian_date(when)),
         "lunation": lunation,
         "islamic_lunation": lunation + 16085,

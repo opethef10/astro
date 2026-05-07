@@ -342,6 +342,7 @@ function displayData(data) {
     // Header info
     const headerDiv = createElement('div');
     headerDiv.appendChild(createLabeledText('Query Date', data.query_date ? formatUTCtoLocal(data.query_date) : 'N/A', 'The date/time for which data is calculated'));
+    headerDiv.appendChild(createLabeledText('Unix Timestamp', data.unix_timestamp !== undefined ? data.unix_timestamp.toString() : 'N/A', 'Seconds since Jan 1, 1970 00:00 UTC'));
     headerDiv.appendChild(createLabeledText('Julian Date', data.julian_date ? data.julian_date.toString() : 'N/A', 'Days since Jan 1, 4713 BC (astronomical dating system)'));
     headerDiv.appendChild(createLabeledText('Lunation', data.lunation ? data.lunation.toString() : 'N/A', 'Number of lunar cycles since reference new moon'));
     headerDiv.appendChild(createLabeledText('Islamic Lunation', data.islamic_lunation ? data.islamic_lunation.toString() : 'N/A', 'Lunar months since Islamic calendar start (July 16, 622 CE)'));
