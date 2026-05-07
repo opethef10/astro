@@ -90,40 +90,39 @@ def compute_all(when: Date, locations: list = None):
     }
 
     # Calculate data for each location from request
-    if locations:
-        for loc in locations:
-            name = loc.get("name", "Unknown")
-            lat = loc.get("lat")
-            lon = loc.get("lon")
-            elev = loc.get("elevation", 0)
+    for loc in locations:
+        name = loc.get("name", "Unknown")
+        lat = loc.get("lat")
+        lon = loc.get("lon")
+        elev = loc.get("elevation", 0)
 
-            try:
-                obs = make_observer(name, lat, lon, elev, when)
-                sidereal_time = obs.sidereal_time()
+        try:
+            obs = make_observer(name, lat, lon, elev, when)
+            sidereal_time = obs.sidereal_time()
 
-                city_data = {
-                    "name": name,
-                    "lat": float(obs.lat),   # Return as radians for frontend
-                    "lon": float(obs.lon),   # Return as radians for frontend
-                    "elevation": obs.elevation,
-                    "sidereal_time": str(sidereal_time),
-                    "sidereal_offset_from_greenwich": str(hours((sidereal_time - greenwich_sidereal) % tau)),
-                    "bodies": {},
-                }
+            city_data = {
+                "name": name,
+                "lat": float(obs.lat),   # Return as radians for frontend
+                "lon": float(obs.lon),   # Return as radians for frontend
+                "elevation": obs.elevation,
+                "sidereal_time": str(sidereal_time),
+                "sidereal_offset_from_greenwich": str(hours((sidereal_time - greenwich_sidereal) % tau)),
+                "bodies": {},
+            }
 
-                # Calculate data for each celestial body
-                for body_class in BODIES:
-                    body_name = body_class.__name__
-                    try:
-                        body_data = get_body_data(body_class, obs, sidereal_time)
-                        city_data["bodies"][body_name] = body_data
-                    except Exception as e:
-                        city_data["bodies"][body_name] = {"error": str(e)}
+            # Calculate data for each celestial body
+            for body_class in BODIES:
+                body_name = body_class.__name__
+                try:
+                    body_data = get_body_data(body_class, obs, sidereal_time)
+                    city_data["bodies"][body_name] = body_data
+                except Exception as e:
+                    city_data["bodies"][body_name] = {"error": str(e)}
 
-                result["cities"][name] = city_data
+            result["cities"][name] = city_data
 
-            except Exception as e:
-                result["cities"][name] = {"error": str(e)}
+        except Exception as e:
+            result["cities"][name] = {"error": str(e)}
 
     # Global events
     try:
