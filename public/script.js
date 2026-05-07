@@ -111,12 +111,22 @@ function formatNumber(value, decimals=1) {
 // Default locations empty - wait for user to pick location
 let locations = [];
 
+function showLoading() {
+    document.getElementById('loadingOverlay').classList.add('active');
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.remove('active');
+}
+
 // Function to get GPS location
 function getGeolocation() {
     if (!navigator.geolocation) {
         alert("Geolocation is not supported by your browser");
         return;
     }
+
+    showLoading();
 
     navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -129,6 +139,7 @@ function getGeolocation() {
             fetchAstro(dateInput ? dateInput.value : '');
         },
         (error) => {
+            hideLoading();
             alert("Unable to retrieve location: " + error.message);
         }
     );
@@ -206,6 +217,8 @@ async function fetchAstro(dateStr = '') {
     const queryString = params.toString();
     if (queryString) url += '?' + queryString;
 
+    showLoading();
+
     try {
         const response = await fetch(url);
         if (!response.ok) {
@@ -228,6 +241,7 @@ function fetchWithDate() {
 }
 
 function displayError(error) {
+    hideLoading();
     const container = document.getElementById('content');
     // Only clear data section, keep location controls
     const existingLocation = document.querySelector('.location-controls');
@@ -312,6 +326,7 @@ function initLocationControls() {
 }
 
 function displayData(data) {
+    hideLoading();
     const container = document.getElementById('content');
     // Keep location controls, clear the rest
     const existingLocation = document.querySelector('.location-controls');
