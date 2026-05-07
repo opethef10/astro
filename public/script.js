@@ -179,33 +179,6 @@ function selectCity(lat, lon, displayName) {
     fetchAstro(dateInput ? dateInput.value : '');
 }
 
-// Function to toggle manual form visibility
-function toggleManualForm() {
-    const form = document.getElementById('manualForm');
-    if (form.style.display === 'none') {
-        form.style.display = 'block';
-    } else {
-        form.style.display = 'none';
-    }
-}
-
-// Function to add custom location
-function addCustomLocation() {
-    const name = document.getElementById('customName').value || "Custom";
-    const lat = parseFloat(document.getElementById('customLat').value);
-    const lon = parseFloat(document.getElementById('customLon').value);
-    const elev = parseInt(document.getElementById('customElev').value) || 0;
-
-    if (isNaN(lat) || isNaN(lon)) {
-        alert("Please enter valid coordinates");
-        return;
-    }
-
-    locations = [{name, lat, lon, elevation: elev}];
-    const now = new Date().toLocaleTimeString();
-    document.getElementById('locationInfo').innerHTML = `<strong>Selected Location:</strong> ${name}`;
-}
-
 async function fetchAstro(dateStr = '') {
     // Don't fetch if no location selected
     if (!locations.length) {
@@ -213,7 +186,7 @@ async function fetchAstro(dateStr = '') {
         container.innerHTML = '';
         const existingLocation = document.querySelector('.location-controls');
         if (existingLocation) container.appendChild(existingLocation);
-        const msg = createElement('div', {class: 'loading'}, 'Please select a location using GPS or enter custom coordinates, then click "Get Data".');
+        const msg = createElement('div', {class: 'loading'}, 'Please select a location using GPS or city search, then click "Get Data".');
         container.appendChild(msg);
         return;
     }
@@ -246,7 +219,7 @@ async function fetchAstro(dateStr = '') {
 
 function fetchWithDate() {
     if (!locations.length) {
-        alert("Please select a location first using GPS or custom location");
+        alert("Please select a location first using GPS or city search");
         return;
     }
     const dateInput = document.getElementById('dateInput');
@@ -274,11 +247,10 @@ function initLocationControls() {
     // Add location controls with Bootstrap classes
     const locationDiv = createElement('div', {class: 'location-controls container-fluid p-3 mb-3 rounded', style: 'background:#1f2833;'});
 
-    const gpsButton = createElement('button', {class: 'btn btn-primary me-2', onclick: 'getGeolocation()'}, 'Use GPS Location');
-    locationDiv.appendChild(gpsButton);
-
-    const manualButton = createElement('button', {class: 'btn btn-secondary', onclick: 'toggleManualForm()'}, 'Manually Type Location');
-    locationDiv.appendChild(manualButton);
+    const gpsRow = createElement('div', {class: 'd-flex align-items-center flex-wrap gap-2'});
+    gpsRow.appendChild(createElement('button', {class: 'btn btn-primary', onclick: 'getGeolocation()'}, 'Use GPS Location'));
+    gpsRow.appendChild(createElement('span', {class: 'small text-muted'}, 'This website doesn\'t use a database. The coordinates are used for calculation and never saved.'));
+    locationDiv.appendChild(gpsRow);
 
     // City search with autocomplete
     const searchDiv = createElement('div', {class: 'row g-2 mt-2'});
@@ -314,22 +286,6 @@ function initLocationControls() {
         }
     });
 
-    const privacyNotice = createElement('div', {class: 'small text-muted mt-2'}, 'This website doesn\'t use a database. The coordinates are used for calculation and never saved.');
-    locationDiv.appendChild(privacyNotice);
-
-    // Collapsible manual form
-    const manualForm = createElement('div', {id: 'manualForm', class: 'mt-3', style: 'display:none;'});
-    const inputDiv = createElement('div', {class: 'row g-2'});
-
-    inputDiv.appendChild(createElement('div', {class: 'col-md-3'}, [createElement('input', {type: 'text', id: 'customName', class: 'form-control', placeholder: 'Location name'})]));
-    inputDiv.appendChild(createElement('div', {class: 'col-md-3'}, [createElement('input', {type: 'number', id: 'customLat', class: 'form-control', placeholder: 'Latitude', step: 'any'})]));
-    inputDiv.appendChild(createElement('div', {class: 'col-md-3'}, [createElement('input', {type: 'number', id: 'customLon', class: 'form-control', placeholder: 'Longitude', step: 'any'})]));
-    inputDiv.appendChild(createElement('div', {class: 'col-md-2'}, [createElement('input', {type: 'number', id: 'customElev', class: 'form-control', placeholder: 'Elevation (m)'})]));
-    inputDiv.appendChild(createElement('div', {class: 'col-md-1'}, [createElement('button', {class: 'btn btn-primary w-100', onclick: 'addCustomLocation()'}, 'Add')]));
-
-    manualForm.appendChild(inputDiv);
-    locationDiv.appendChild(manualForm);
-
     const locationInfo = createElement('div', {id: 'locationInfo', class: 'mt-2 small text-muted'}, 'No location selected');
     locationDiv.appendChild(locationInfo);
 
@@ -350,7 +306,7 @@ function initLocationControls() {
     container.appendChild(locationDiv);
 
     // Show prompt
-    const msg = createElement('div', {class: 'loading mt-3 text-center'}, 'Please select a location using GPS or enter custom coordinates, then click "Get Data".');
+    const msg = createElement('div', {class: 'loading mt-3 text-center'}, 'Please select a location using GPS or city search, then click "Get Data".');
     container.appendChild(msg);
 }
 
