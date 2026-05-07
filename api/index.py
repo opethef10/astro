@@ -1,6 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import json
-from typing import Optional
 
 from ephem import Date, now
 from fastapi import FastAPI, Query
@@ -13,14 +12,23 @@ app = FastAPI()
 
 @app.get("/api/astro")
 async def get_astro(
-    date: Optional[str] = Query(None, description="Date in ISO format or ephem date string"),
-    locations: Optional[str] = Query(None, description="JSON string of locations")
+    date: str | None = Query(None, description="Date in ISO format or ephem date string"),
+    locations: str | None = Query(None, description="JSON string of locations")
 ):
     try:
         if date:
             try:
-                when = Date(datetime.fromisoformat(date.replace("Z", "+00:00")))
+                # Parse ISO format with timezone (e.g., "2026-05-06T14:30:00+02:00")
+                # Replace Z with +00:00 for UTC
+                date_clean = date.replace('Z', '+00:00')
+                # Parse with datetime.fromisoformat (handles timezone offsets)
+                dt = datetime.fromisoformat(date_clean)
+                # Convert to UTC
+                dt_utc = dt.astimezone(timezone.utc)
+                # Convert to ephem Date format
+                when = Date(dt_utc)
             except ValueError:
+                # Fallback to ephem date string
                 when = Date(date)
         else:
             when = now()

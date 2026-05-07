@@ -125,7 +125,7 @@ function getGeolocation() {
             const name = `GPS Location (${lat.toFixed(2)}, ${lon.toFixed(2)})`;
             locations = [{name, lat, lon, elevation: 0}];
             const now = new Date().toLocaleTimeString();
-            document.getElementById('locationInfo').innerHTML = `<strong>Selected Location:</strong> ${name}<br><small>Selected at: ${now}</small>`;
+            document.getElementById('locationInfo').innerHTML = `<strong>Selected Location:</strong> ${name}`;
         },
         (error) => {
             alert("Unable to retrieve location: " + error.message);
@@ -157,7 +157,7 @@ function addCustomLocation() {
 
     locations = [{name, lat, lon, elevation: elev}];
     const now = new Date().toLocaleTimeString();
-    document.getElementById('locationInfo').innerHTML = `<strong>Selected Location:</strong> ${name}<br><small>Selected at: ${now}</small>`;
+    document.getElementById('locationInfo').innerHTML = `<strong>Selected Location:</strong> ${name}`;
 }
 
 async function fetchAstro(dateStr = '') {
@@ -176,11 +176,9 @@ async function fetchAstro(dateStr = '') {
     const params = new URLSearchParams();
 
     if (dateStr) {
-        // Convert local datetime to UTC before sending
+        // Send ISO format with local timezone offset
         const localDate = new Date(dateStr);
-        const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000);
-        dateStr = utcDate.toISOString();
-        params.append('date', dateStr);
+        params.append('date', localDate.toISOString());
     }
 
     params.append('locations', JSON.stringify(locations));
@@ -263,7 +261,7 @@ function initLocationControls() {
 
     // Show user's timezone
     const userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const tzLabel = createElement('div', {class: 'col-md-2 d-flex align-items-center'}, `(UTC, ${userTZ})`);
+    const tzLabel = createElement('div', {class: 'col-md-2 d-flex align-items-center'}, userTZ);
     dateInputDiv.appendChild(tzLabel);
 
     dateInputDiv.appendChild(createElement('div', {class: 'col-md-2'}, [createElement('button', {class: 'btn btn-primary w-100', onclick: 'fetchWithDate()'}, 'Get Data')]));
